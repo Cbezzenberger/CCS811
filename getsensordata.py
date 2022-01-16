@@ -2,7 +2,6 @@ import time
 from Adafruit_CCS811 import Adafruit_CCS811
 
 ccs = Adafruit_CCS811()
-sens_dict = {}
 
 def update_values():
     try:
