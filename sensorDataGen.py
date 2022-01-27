@@ -3,37 +3,39 @@ import csv
 import time
 # from collections import deque
 import os
+from sys import exit
 
 ccs = Adafruit_CCS811()
 
-# ts = deque(maxlen=86400)
-# CO2 = deque(maxlen=86400)
-# TVOC = deque(maxlen=86400)
+fieldnames = ["Timestamp", "Co2", "Tvoc"]
+Error_counter = []
 
 def update_ccsdata():
     ccs.readData()
-    # ts.append(time.strftime("%H:%M:%S"))
-    # CO2.append(ccs.geteCO2())
-    # TVOC.append(ccs.getTVOC())
-    if not os.path.exists("/csvfiles"):
-        os.mkdir("/csvfiles", mode=0o777)
-    # with open(f"csvfiles/{time.strftime('%Y%m%d')}_ccsdata.csv","a") as f:
-    with open(f"csvfiles/{time.strftime('%h%m')}_ccsdata.csv","a") as f:
-        csvwriter = csv.DictWriter(f, fieldnames=fieldnames)
-
-        ts = time.strftime("%H:%M:%S")
-        CO2 = ccs.geteCO2()
-        TVOC = ccs.getTVOC()
-
-        info = {
-            "Timestamp": ts,
-            "Co2": CO2,
-            "Tvoc": TVOC
+    return {
+        "Timestamp": time.strftime("%H:%M:%S"),
+        "Co2": ccs.geteCO2(),
+        "Tvoc": ccs.getTVOC()
         }
 
-        csvwriter.writerow(info)
-        # print(ts, CO2, TVOC)
-        #TODO: Create delete function for old CSVs
-    time.sleep(1)
+def write_csvfile():
+    if not os.path.exists("csvfiles"):
+        os.mkdir("csvfiles", mode=0o777)
 
-update_ccsdata()
+    while True:
+        csvpath = f"csvfiles/{time.strftime('%H')}_ccsdata.csv"
+        if not os.path.exists(csvpath):
+            with open(csvpath, "w")as csv_file:
+                csv.DictWriter(csv_file, fieldnames=fieldnames).writeheader()
+        Try:
+            with open(csvpath, "a") as csv_file:
+                csvwriter = csv.DictWriter(csv_file, fieldnames=fieldnames)
+
+                info = update_ccsdata()
+
+                csvwriter.writerow(info)
+                # print(ts, CO2, TVOC)
+                #TODO: Create delete function for old CSVs
+            time.sleep(1)
+        
+write_csvfile()
