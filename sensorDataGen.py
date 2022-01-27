@@ -27,15 +27,14 @@ def write_csvfile():
         if not os.path.exists(csvpath):
             with open(csvpath, "w")as csv_file:
                 csv.DictWriter(csv_file, fieldnames=fieldnames).writeheader()
-        Try:
-            with open(csvpath, "a") as csv_file:
-                csvwriter = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        with open(csvpath, "a") as csv_file:
+            csvwriter = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
-                info = update_ccsdata()
+            info = update_ccsdata()
 
-                csvwriter.writerow(info)
-                # print(ts, CO2, TVOC)
-                #TODO: Create delete function for old CSVs
-            time.sleep(1)
-        
+            csvwriter.writerow(info)
+            # print(ts, CO2, TVOC)
+            #TODO: Create delete function for old CSVs
+        time.sleep(1)
+    
 write_csvfile()
