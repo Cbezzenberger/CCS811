@@ -1,7 +1,6 @@
 from Adafruit_CCS811 import Adafruit_CCS811
 import csv
 import time
-# from collections import deque
 import os
 import sys
 
@@ -23,7 +22,7 @@ def write_csvfile():
         os.mkdir("csvfiles", mode=0o777)
 
     while True:
-        csvpath = f"csvfiles/{time.strftime('%H')}_ccsdata.csv"
+        csvpath = f"csvfiles/{time.strftime('%d%H')}_ccsdata.csv"
 
         if not os.path.exists(csvpath):
             with open(csvpath, "w")as csv_file:
