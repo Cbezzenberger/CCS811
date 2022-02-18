@@ -6,17 +6,17 @@ from collections import deque
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-Ts = deque(maxlen=720)
-Co2 = deque(maxlen=720)
-Tvoc = deque(maxlen=720)
+Ts = deque(maxlen=360)
+Co2 = deque(maxlen=360)
+Tvoc = deque(maxlen=360)
 
 def animate_sensor_data(i):
     current_day = time.strftime("%d")
     sensor_data = pd.read_csv(f"csvfiles/{current_day}_ccsdata.csv")
     
-    Ts.append(sensor_data["Timestamp"][-1:].strptime("%H:%M:%S"))
-    Co2.append(sensor_data["Co2"][-1:])
-    Tvoc.append(sensor_data["Tvoc"][-1:])
+    Ts.append(time.strptime(sensor_data["Timestamp"].iat[-1], "%H:%M:%S"))
+    Co2.append(sensor_data["Co2"].iat[-1])
+    Tvoc.append(sensor_data["Tvoc"].iat[-1])
 
     plt.cla()
 
