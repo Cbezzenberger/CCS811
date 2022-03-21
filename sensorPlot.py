@@ -12,7 +12,7 @@ import matplotlib.dates as mdates
 
 def animate_sensor_data(i):
     current_day = time.strftime("%d")
-    sensor_data = pd.read_csv(f"csvfiles/{current_day}_ccsdata.csv")
+    sensor_data = pd.read_csv(f"csvfiles/{current_day}_ccsdata.csv", parse_dates=True)
     
     # Ts.append(time.strptime(sensor_data["Timestamp"].iat[-1], "%H:%M:%S"))
     # Co2.append(sensor_data["Co2"].iat[-1])

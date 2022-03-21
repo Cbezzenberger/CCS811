@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import multiprocessing
 from Adafruit_CCS811 import Adafruit_CCS811
 from multiprocessing import Process
 import csv
@@ -7,8 +6,8 @@ import time
 import os
 import sys
 import schedule
-#TODO: Switch from csv-based to tinydb in-memory storage.
-#from tinydb.storages import MemoryStorage
+#TODO: Switch from csv-based to tinydb in-memory storage. https://www.opensourceforu.com/2017/05/three-python-databases-pickledb-tinydb-zodb/
+#from tinydb.storages import MemoryStorage 
 
 ccs = Adafruit_CCS811()
 
@@ -77,9 +76,9 @@ def _delete_old_csv():
 
 #TODO:Not sure if this is the most efficient implementation.
 if __name__ == '__main__':
-    p1 = multiprocessing.Process(target=delete_old_csv)
+    p1 = Process(target=delete_old_csv)
     p1.start()
-    p2 = multiprocessing.Process(target=write_csvfile)
+    p2 = Process(target=write_csvfile)
     p2.start()
     p1.join()
     p2.join()
