@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta 
+import time
+#Could probably be shrunk by just using the time module.
 from Adafruit_CCS811 import Adafruit_CCS811
 from multiprocessing import Process
 import csv
-import time
 import os
 import sys
 import schedule
@@ -20,12 +21,12 @@ def update_ccsdata():
     ccs.readData()
     if ccs.geteCO2() < 7500 and ccs.getTVOC() < 7500:
         return {
-            "Timestamp": time.strftime("%H:%M:%S"),
+            "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
             "Co2": ccs.geteCO2(),
             "Tvoc": ccs.getTVOC()}
     else:
         return {
-            "Timestamp": time.strftime("%H:%M:%S"),
+            "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
             "Co2": 0,
             "Tvoc": 0}
 
@@ -34,8 +35,7 @@ def write_csvfile(update_frq = 5): #define update frequency in seconds. This wil
         os.mkdir("csvfiles", mode=0o777)
 
     while True:
-        csvpath = f"csvfiles/{time.strftime('%d')}_ccsdata.csv"
-        # csvpath = f"csvfiles/{time.strftime('%d%H')}_ccsdata.csv" #uncomment for more detailed data in additional csvfiles, created per hour.
+        csvpath = f"csvfiles/{datetime.utcnow().strftime('%d')}_ccsdata.csv"
 
         if not os.path.exists(csvpath):
             with open(csvpath, "w")as csv_file:
@@ -72,7 +72,10 @@ def delete_old_csv(): #Thanks @RightmireM
 
 def _delete_old_csv():
     tmrw = datetime.today() + timedelta(days=1)
-    os.remove(os.path.abspath(f"csvfiles/{tmrw}_ccsdata.csv"))
+    try:
+        os.remove(os.path.abspath(f"csvfiles/{tmrw.strftime('%d')}_ccsdata.csv"))
+    except FileNotFoundError:
+        pass #File creation is handled in write_csvfile function.
 
 #TODO:Not sure if this is the most efficient implementation.
 if __name__ == '__main__':
