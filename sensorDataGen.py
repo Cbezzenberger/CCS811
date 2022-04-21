@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta 
 import time
 #Could probably be shrunk by just using the time module.
-from Adafruit_CCS811 import Adafruit_CCS811
+import adafruit_ccs811
 from multiprocessing import Process
 import csv
 import os
@@ -10,7 +10,8 @@ import schedule
 #TODO: Switch from csv-based to tinydb in-memory storage. https://www.opensourceforu.com/2017/05/three-python-databases-pickledb-tinydb-zodb/
 #from tinydb.storages import MemoryStorage 
 
-ccs = Adafruit_CCS811()
+i2c_bus = busio.I2C(board.SCL, board.SDA)
+ccs = adafruit_ccs811.CCS811(i2c_bus)
 
 fieldnames = ["Timestamp", "Co2", "Tvoc"]
 IOerror_counter = 0
@@ -19,11 +20,11 @@ IOerror_counter = 0
 
 def update_ccsdata():
     ccs.readData()
-    if ccs.geteCO2() < 7500 and ccs.getTVOC() < 7500:
+    if ccs.eco2() < 7500 and ccs.tvoc() < 7500:
         return {
             "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "Co2": ccs.geteCO2(),
-            "Tvoc": ccs.getTVOC()}
+            "Co2": ccs.eco2(),
+            "Tvoc": ccs.tvoc()}
     else:
         return {
             "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
