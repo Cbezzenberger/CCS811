@@ -21,7 +21,6 @@ IOerror_counter = 0
 #db = TinyDB(storage=MemoryStorage)
 
 def update_ccsdata():
-    ccs.readData()
     if ccs.eco2() < 7500 and ccs.tvoc() < 7500:
         return {
             "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
