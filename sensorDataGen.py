@@ -21,11 +21,11 @@ IOerror_counter = 0
 #db = TinyDB(storage=MemoryStorage)
 
 def update_ccsdata():
-    if ccs.eco2() < 7500 and ccs.tvoc() < 7500:
+    if ccs.eco2 < 7500 and ccs.tvoc < 7500:
         return {
             "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "Co2": ccs.eco2(),
-            "Tvoc": ccs.tvoc()}
+            "Co2": ccs.eco2,
+            "Tvoc": ccs.tvoc}
     else:
         return {
             "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
