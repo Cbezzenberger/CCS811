@@ -21,16 +21,25 @@ IOerror_counter = 0
 #db = TinyDB(storage=MemoryStorage)
 
 def update_ccsdata():
-    if ccs.eco2 < 7500 and ccs.tvoc < 7500:
-        return {
-            "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "Co2": ccs.eco2,
-            "Tvoc": ccs.tvoc}
-    else:
-        return {
-            "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "Co2": 0,
-            "Tvoc": 0}
+    try:
+        if ccs.eco2 < 7500 and ccs.tvoc < 7500: #Sometimes, sensor is outputting crazy-high numbers, this should catch it and return 0.
+            #TODO: Add a check to see if the sensor is actually working.
+            #TODO: Write function to remove outliers completely.
+            return {
+                "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "Co2": ccs.eco2,
+                "Tvoc": ccs.tvoc}
+        else:
+            return {
+                "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "Co2": 0,
+                "Tvoc": 0}
+    except RuntimeError: #Seems to just happen sometimes, returning zero 0 for both values for now. #TODO: Create better fix.
+        if IOError_counter > 3:
+            sys.exit()
+        else:
+            time.sleep(10)
+            IOerror_counter += 1
 
 def write_csvfile(update_frq = 5): #define update frequency in seconds. This will create a new csvfile etry according to the set frequency.
     if not os.path.exists("csvfiles"): #Create subdirectory for csvfiles if it does not exist.
@@ -55,13 +64,6 @@ def write_csvfile(update_frq = 5): #define update frequency in seconds. This wil
                 IOerror_counter = 0 #reset IOError counter after successful write attempt.
             time.sleep(update_frq)
 
-        except IOError: #Seems to just happen occasionally
-            if IOerror_counter > 3:
-                sys.exit()
-            else:
-                time.sleep(10)
-                IOerror_counter += 1
-                
 #Function to delete the oldest CSVfile, once there are more than 27 csvfiles in the folder.
 #TODO:Section should be updated, finding and deleting a specific date offset file instead of just the oldest.
 
