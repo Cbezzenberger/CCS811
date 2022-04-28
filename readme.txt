@@ -7,7 +7,7 @@ Out of the box, this code should work with
 
 
 As instructed by the adafruit how-to:
-Before initialisation,
+Before launch,
 
     sudo nano /boot/config.txt
 
