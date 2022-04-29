@@ -1,5 +1,6 @@
 from datetime import datetime
 from pandas import DataFrame, read_csv
+from time import sleep
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import matplotlib.ticker as tkr
@@ -13,11 +14,11 @@ ln, = plt.plot([], [], 'r-')
 ln2, = plt.plot([], [], 'k--')
 plt.grid(which = 'both', axis='y', color = 'k', linestyle = ':', linewidth = '0.5')
 
-def plot_update(frame):
+def plot_update():
     ax.set_ylim(0,4000)
     ax.yaxis.set_major_formatter(tkr.FuncFormatter(lambda y,pos: f"{int(y/1000)}k"))
     current_day = datetime.utcnow().strftime("%d")
-    sensor_data = pd.read_csv(f"csvfiles/{current_day}_ccsdata.csv", parse_dates=['Timestamp'])
+    sensor_data = read_csv(f"csvfiles/{current_day}_ccsdata.csv", parse_dates=['Timestamp'])
 
     Ts = sensor_data['Timestamp'][-240:]
     Co2 = sensor_data['Co2'][-240:]
@@ -34,3 +35,7 @@ def plot_update(frame):
     fig.autofmt_xdate()
     plt.plot()
     plt.savefig('fig.png', bbox_inches = 'tight')
+
+while True:
+    plot_update()
+    sleep(5)
