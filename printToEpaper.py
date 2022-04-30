@@ -5,16 +5,16 @@ from PIL import Image
 import sys
 
 def print2epaper(imgfile):
-    fnf_counter = 0 #FileNotFound Counter
+    fnf_counter = 0 #FileNotFound counter
     X_PIXEL = 128
     Y_PIXEL = 250
-    
+
     try:
         e = Epaper(X_PIXEL, Y_PIXEL)
-        
         f = Image.open(imgfile)
         fnf_counter = 0
-        
+        f = f.rotate(angle=90, expand=True)
+
         rBuf = [0] * 4000
         bBuf = [0] * 4000
 
@@ -30,9 +30,11 @@ def print2epaper(imgfile):
                     index = int(16 * y + (15 - (x - 7) / 8))
                     tmp = bBuf[index]
                     bBuf[index] = tmp | (1 << (x % 8))
-    
+
         e.flash_red(buf = rBuf)
         e.flash_black(buf=bBuf)
+        e.update()
+
 
     except FileNotFoundError:
         if fnf_counter <= 5:

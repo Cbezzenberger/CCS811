@@ -1,20 +1,24 @@
 from datetime import datetime
 from pandas import DataFrame, read_csv
 from time import sleep
+from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import matplotlib.ticker as tkr
 
 cm = 1/2.54 #centimeters to inches conversion
-fig, ax = plt.subplots(figsize = (2.38*cm,4.88*cm), dpi = 130) #current display is 250×122@2.13".
-    #Trying to get to exact pixels for later conversion to ePaper.
-# fig, ax = plt.subplots()
-Ts, Co2 = [],[]
-ln, = plt.plot([], [], 'r-')
-ln2, = plt.plot([], [], 'k--')
-plt.grid(which = 'both', axis='y', color = 'k', linestyle = ':', linewidth = '0.5')
+WIDTH=4.89*cm
+HEIGHT=2.51*cm
 
 def plot_update():
+    fig, ax = plt.subplots(figsize = (WIDTH, HEIGHT)) #current display is 250×122@2.13".
+    #Trying to get to exact pixels for later conversion to ePaper.
+    # fig, ax = plt.subplots()
+    Ts, Co2 = [],[]
+    ln, = plt.plot([], [], '-', color = '#ED1C24')
+    ln2, = plt.plot([], [], 'k--')
+    plt.grid(which = 'both', axis='y', color = 'k', linestyle = ':', linewidth = '0.5')
+
     ax.set_ylim(0,4000)
     ax.yaxis.set_major_formatter(tkr.FuncFormatter(lambda y,pos: f"{int(y/1000)}k"))
     current_day = datetime.utcnow().strftime("%d")
@@ -34,7 +38,9 @@ def plot_update():
     ax.xaxis.set_major_formatter(xformatter)
     fig.autofmt_xdate()
     plt.plot()
-    plt.savefig('fig.png', bbox_inches = 'tight')
+    plt.tight_layout()
+    plt.savefig('fig.png', dpi = 130)
+    plt.close('all') #This is not very efficient, but should work well enough for now. TODO:Optimise
 
 while True:
     plot_update()
