@@ -37,8 +37,8 @@ def plot_update():
     ax.xaxis.set_major_locator(xlocator)
     ax.xaxis.set_major_formatter(xformatter)
     fig.autofmt_xdate()
-    plt.plot()
     plt.tight_layout()
+    plt.plot()
     plt.savefig('fig.png', dpi = 130)
     plt.close('all') #This is not very efficient, but should work well enough for now. TODO:Optimise
 

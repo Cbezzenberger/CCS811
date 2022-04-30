@@ -46,4 +46,4 @@ def print2epaper(imgfile):
 
 while True:
     print2epaper("fig.png")
-    time.sleep(5)
+    time.sleep(30)

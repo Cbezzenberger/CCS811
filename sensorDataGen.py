@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta 
 import time
+from numpy import nan
 #Could probably be shrunk by just using the time module.
 import adafruit_ccs811
 from multiprocessing import Process
@@ -29,20 +30,24 @@ def update_ccsdata():
                 "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "Co2": ccs.eco2,
                 "Tvoc": ccs.tvoc}
+            IOerror_counter = 0 #reset IOError counter after successful sensor readout.
         else:
             return {
                 "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "Co2": 0,
-                "Tvoc": 0}
-    except RuntimeError: #Seems to just happen sometimes, returning zero 0 for both values for now. #TODO: Create better fix.
-        if IOError_counter > 3:
+                "Co2": nan,
+                "Tvoc": nan}
+    except RuntimeError: #Seems to just happen sometimes, currently just returning NAN until it is resolved.
+        if IOError_counter > 5:
             sys.exit()
         else:
-            time.sleep(10)
+            return {
+                "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "Co2": nan,
+                "Tvoc": nan}
             IOerror_counter += 1
 
 def write_csvfile(update_frq = 5): #define update frequency in seconds. This will create a new csvfile etry according to the set frequency.
-    if not os.path.exists("csvfiles"): #Create subdirectory for csvfiles if it does not exist.
+    if not os.path.exists("csvfiles"):
         os.mkdir("csvfiles", mode=0o777)
 
     while True:
@@ -58,9 +63,7 @@ def write_csvfile(update_frq = 5): #define update frequency in seconds. This wil
             info = update_ccsdata()
 
             csvwriter.writerow(info)
-            #TODO: Create delete function for old CSVs
-            # csvfiles = [i for i in os.listdir("./csvfiles") if os.path.isfile(os.path.join("csvfiles, f"))]
-            IOerror_counter = 0 #reset IOError counter after successful write attempt.
+
         time.sleep(update_frq)
 
 #Function to delete the oldest CSVfile, once there are more than 27 csvfiles in the folder.
