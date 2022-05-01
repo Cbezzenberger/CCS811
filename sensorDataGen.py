@@ -36,7 +36,7 @@ def update_ccsdata():
                 "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "Co2": nan,
                 "Tvoc": nan}
-    except RuntimeError: #Seems to just happen sometimes, currently just returning NAN until it is resolved.
+    except (IOError, RuntimeError): #Seems to just happen sometimes, currently just returning NAN until it is resolved.
         if IOError_counter > 5:
             sys.exit()
         else:
