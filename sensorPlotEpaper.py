@@ -1,10 +1,10 @@
 from datetime import datetime
 from pandas import DataFrame, read_csv
 from time import sleep
-from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import matplotlib.ticker as tkr
+from matplotlib import rc
 
 cm = 1/2.54 #centimeters to inches conversion
 WIDTH=4.89*cm
@@ -36,11 +36,14 @@ def plot_update():
     xlocator = md.MinuteLocator(byminute = [0,15,30,45], interval = 1)
     ax.xaxis.set_major_locator(xlocator)
     ax.xaxis.set_major_formatter(xformatter)
+    ax.tick_params(axis = 'y', pad = 0.5)
+    rc("xtick", labelsize = 7)
     fig.autofmt_xdate()
     plt.tight_layout()
     plt.plot()
+    plt.subplots_adjust(left=0.1, right=0.97, top=0.95, bottom=0.3)
     plt.savefig('fig.png', dpi = 130)
-    plt.close('all') #This is not very efficient, but should work well enough for now. TODO:Optimise
+    plt.close('all') #This is not very efficient, but should work well enough for now and low update frequency. TODO:Optimise
 
 while True:
     plot_update()
