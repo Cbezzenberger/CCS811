@@ -1,50 +1,50 @@
 #First clone geeekpi/epaper
-import time
+from time import sleep
 from Epaper import *
 from PIL import Image
 import sys
 
-def print2epaper(imgfile):
-    fnf_counter = 0 #FileNotFound counter
+def print_to_epaper(imgfile):
+    file_not_found_counter = 0 #FileNotFound counter
     X_PIXEL = 128
     Y_PIXEL = 250
 
-    try:
-        e = Epaper(X_PIXEL, Y_PIXEL)
-        with Image.open(imgfile) as f:
-            fnf_counter = 0
-            f = f.rotate(angle=90, expand=True)
+    while True: 
+        try:
+            e = Epaper(X_PIXEL, Y_PIXEL)
+            with Image.open(imgfile) as f:
+                file_not_found_counter = 0
+                f = f.rotate(angle=90, expand=True)
 
-            rBuf = [0] * 4000
-            bBuf = [0] * 4000
+                rBuf = [0] * 4000
+                bBuf = [0] * 4000
 
-            f = f.convert('RGB')
-            data = f.load()
+                f = f.convert('RGB')
+                data = f.load()
 
-        for y in range(250): #This piece of code is directly taken from the geeekpi demo.py file
-            for x in range(128):
-                if data[x,y] == (237,28,36): #IndexError: image index out of range TODO: Probably resize image to correct resolution.
-                    index = int(16 * y + (15 - (x - 7) / 8))
-                    tmp = rBuf[index]
-                    rBuf[index] = tmp | (1 << (x % 8))
-                elif data[x,y] == (255,255,255):
-                    index = int(16 * y + (15 - (x - 7) / 8))
-                    tmp = bBuf[index]
-                    bBuf[index] = tmp | (1 << (x % 8))
+            for y in range(250): #This piece of code is directly taken from the geeekpi demo.py file
+                for x in range(128):
+                    if data[x,y] == (237,28,36): #IndexError: image index out of range TODO: Probably resize image to correct resolution.
+                        index = int(16 * y + (15 - (x - 7) / 8))
+                        tmp = rBuf[index]
+                        rBuf[index] = tmp | (1 << (x % 8))
+                    elif data[x,y] == (255,255,255):
+                        index = int(16 * y + (15 - (x - 7) / 8))
+                        tmp = bBuf[index]
+                        bBuf[index] = tmp | (1 << (x % 8))
 
-        e.flash_red(buf = rBuf)
-        e.flash_black(buf=bBuf)
-        e.update()
+            e.flash_red(buf = rBuf)
+            e.flash_black(buf=bBuf)
+            e.update()
+            sleep(5)
 
+        except FileNotFoundError:
+            if file_not_found_counter <= 5:
+                sleep(2)
+                print(f"No png file found to print to epaper display. Retrying {file_not_found_counter}")
+                file_not_found_counter += 1
+            elif file_not_found_counter > 5:
+                sys.exit("No png file found to print to epaper display. Exiting...\n")
 
-    except FileNotFoundError:
-        if fnf_counter <= 5:
-            time.sleep(2)
-            print(f"No png file found to print to epaper display. Retrying {fnf_counter}")
-            fnf_counter += 1
-        elif fnf_counter > 5:
-            sys.exit("No png file found to print to epaper display. Exiting...\n")
-
-while True:
-    print2epaper("fig.png")
-    time.sleep(30)
+if __name__ == '__main__':
+    print_to_epaper()
