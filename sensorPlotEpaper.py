@@ -10,7 +10,7 @@ cm = 1/2.54 #centimeters to inches conversion
 WIDTH=4.89*cm
 HEIGHT=2.51*cm
 
-def plot_update():
+def plot_update(frequency=5):
     while True:
         fig, ax = plt.subplots(figsize = (WIDTH, HEIGHT)) #current display is 250×122@2.13".
         #Trying to get to exact pixels for later conversion to ePaper.
@@ -46,8 +46,11 @@ def plot_update():
         plt.savefig('fig.png', dpi = 130)
         plt.close('all') #This is not very efficient, but should work well enough for now and low update frequency. TODO:Optimise
 
-        sleep(5)
+        sleep(frequency)
     #TODO: Add exception handling.
 
+def main():
+    plot_update(frequency=5)
+
 if __name__ == '__main__':
-    plot_update()
+    main()

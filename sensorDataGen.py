@@ -77,10 +77,13 @@ def _delete_old_csv():
         pass #File creation is handled in write_csvfile function.
 
 #TODO:Not sure if this is the most efficient implementation.
-if __name__ == '__main__':
+def main():
     p1 = Process(target=delete_old_csv)
     p1.start()
     p2 = Process(target=write_csvfile)
     p2.start()
     p1.join()
     p2.join()
+
+if __name__ == '__main__':
+    main()
