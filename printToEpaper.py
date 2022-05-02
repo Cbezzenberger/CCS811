@@ -54,6 +54,5 @@ def print_to_epaper(imgfile):
             elif file_error_counter > 5:
                 sys.exit("UnidentifiedImageError. Exiting...\n")
 
-
 if __name__ == '__main__':
     print_to_epaper()
