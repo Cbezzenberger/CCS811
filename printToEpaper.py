@@ -5,7 +5,11 @@ from PIL import Image, UnidentifiedImageError
 import sys
 
 def print_to_epaper(imgfile):
+<<<<<<< HEAD
     file_error_counter = 0 #FileNotFound counter
+=======
+    file_not_found_counter = 0 #FileNotFound counter
+>>>>>>> a699c804976f218fd2ca21f9d114eb0379f59612
     X_PIXEL = 128
     Y_PIXEL = 250
 
@@ -13,7 +17,11 @@ def print_to_epaper(imgfile):
         try:
             e = Epaper(X_PIXEL, Y_PIXEL)
             with Image.open(imgfile) as f:
+<<<<<<< HEAD
                 file_error_counter = 0
+=======
+                file_not_found_counter = 0
+>>>>>>> a699c804976f218fd2ca21f9d114eb0379f59612
                 f = f.rotate(angle=90, expand=True)
 
                 rBuf = [0] * 4000
@@ -53,7 +61,6 @@ def print_to_epaper(imgfile):
                 file_error_counter += 1
             elif file_error_counter > 5:
                 sys.exit("UnidentifiedImageError. Exiting...\n")
-
 
 if __name__ == '__main__':
     print_to_epaper()
