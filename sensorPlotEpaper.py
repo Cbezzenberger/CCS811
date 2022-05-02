@@ -41,7 +41,7 @@ def plot_update():
     fig.autofmt_xdate()
     plt.tight_layout()
     plt.plot()
-    plt.subplots_adjust(left=0.1, right=0.97, top=0.95, bottom=0.3)
+    plt.subplots_adjust(left=0.11, right=0.97, top=0.95, bottom=0.3)
     plt.savefig('fig.png', dpi = 130)
     plt.close('all') #This is not very efficient, but should work well enough for now and low update frequency. TODO:Optimise
 

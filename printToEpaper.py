@@ -11,16 +11,17 @@ def print2epaper(imgfile):
 
     try:
         e = Epaper(X_PIXEL, Y_PIXEL)
-        f = Image.open(imgfile)
-        fnf_counter = 0
-        f = f.rotate(angle=90, expand=True)
+        with Image.open(imgfile) as f:
+            fnf_counter = 0
+            f = f.rotate(angle=90, expand=True)
 
-        rBuf = [0] * 4000
-        bBuf = [0] * 4000
+            rBuf = [0] * 4000
+            bBuf = [0] * 4000
 
-        f = f.convert('RGB')
-        data = f.load()
-        for y in range(250):
+            f = f.convert('RGB')
+            data = f.load()
+
+        for y in range(250): #This piece of code is directly taken from the geeekpi demo.py file
             for x in range(128):
                 if data[x,y] == (237,28,36): #IndexError: image index out of range TODO: Probably resize image to correct resolution.
                     index = int(16 * y + (15 - (x - 7) / 8))
