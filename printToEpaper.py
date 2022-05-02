@@ -5,7 +5,7 @@ from PIL import Image, UnidentifiedImageError
 import sys
 
 def print_to_epaper(imgfile):
-    file_error_counter = 0 #FileNotFound counter
+    file_error_counter = 0 #FileNotFound or unidentified image error counter
     X_PIXEL = 128
     Y_PIXEL = 250
 
@@ -38,21 +38,13 @@ def print_to_epaper(imgfile):
             e.update()
             sleep(5)
 
-        except FileNotFoundError:
+        except (FileNotFoundError, UnidentifiedImageError):
             if file_error_counter <= 5:
                 sleep(2)
-                print(f"No png file found to print to epaper display. Retrying {file_error_counter}")
+                print(f"No png file found to print to epaper display or unidentified image error. Retrying {file_error_counter}")
                 file_error_counter += 1
             elif file_error_counter > 5:
-                sys.exit("No png file found to print to epaper display. Exiting...\n")
+                sys.exit("No png file found to print to epaper display or unidentified image error. Exiting...\n")
         
-        except UnidentifiedImageError:
-            if file_error_counter <= 5:
-                sleep(2)
-                print(f"UnidentifiedImageError. Retrying {file_error_counter}")
-                file_error_counter += 1
-            elif file_error_counter > 5:
-                sys.exit("UnidentifiedImageError. Exiting...\n")
-
 if __name__ == '__main__':
     print_to_epaper()
