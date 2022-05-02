@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta 
 import time
 from numpy import nan
-#Could probably be shrunk by just using the time module.
 import adafruit_ccs811
 from multiprocessing import Process
 import csv
@@ -10,8 +9,7 @@ import board
 import busio
 import sys
 import schedule
-#TODO: Switch from csv-based to tinydb in-memory storage. https://www.opensourceforu.com/2017/05/three-python-databases-pickledb-tinydb-zodb/
-#from tinydb.storages import MemoryStorage 
+#TODO: Switch from csv-based to tinydb in-memory storage.
 
 i2c_bus = busio.I2C(board.SCL, board.SDA)
 ccs = adafruit_ccs811.CCS811(i2c_bus)
@@ -45,7 +43,7 @@ def update_ccsdata():
                 "Tvoc": nan}
             increase_IOerror_counter(IOerror_counter)
 
-def write_csvfile(update_frq = 5): #define update frequency in seconds. This will create a new csvfile etry according to the set frequency.
+def write_csvfile(update_frq = 5): #Update frequency in seconds. This will create a new csvfile entry according to the set frequency.
     if not os.path.exists("csvfiles"):
         os.mkdir("csvfiles", mode=0o777)
 
@@ -65,11 +63,7 @@ def write_csvfile(update_frq = 5): #define update frequency in seconds. This wil
 
         time.sleep(update_frq)
 
-#Function to delete the oldest CSVfile, once there are more than 27 csvfiles in the folder.
-#TODO:Section should be updated, finding and deleting a specific date offset file instead of just the oldest.
-
-
-def delete_old_csv(): #Thanks @RightmireM
+def delete_old_csv(): #Scheduled function delete the csv file from the next day's date at 23:55.
     schedule.every().day.at("23:55").do(_delete_old_csv)
     while True:
         schedule.run_pending()
