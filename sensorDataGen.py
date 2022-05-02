@@ -17,15 +17,14 @@ i2c_bus = busio.I2C(board.SCL, board.SDA)
 ccs = adafruit_ccs811.CCS811(i2c_bus)
 
 fieldnames = ["Timestamp", "Co2", "Tvoc"]
+
 IOerror_counter = 0
 
-#db = TinyDB(storage=MemoryStorage)
-
 def update_ccsdata():
+    global IOerror_counter #Could not find a workaround for using global without rewriting large parts of the logic.
     try:
-        if ccs.eco2 < 7500 and ccs.tvoc < 7500: #Sometimes, sensor is outputting crazy-high numbers, this should catch it and return 0.
+        if ccs.eco2 < 7500 and ccs.tvoc < 7500: #Sometimes, sensor is returning crazy-high numbers, this should catch it and return NAN in those cases.
             #TODO: Add a check to see if the sensor is actually working.
-            #TODO: Write function to remove outliers completely.
             return {
                 "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "Co2": ccs.eco2,
@@ -37,14 +36,14 @@ def update_ccsdata():
                 "Co2": nan,
                 "Tvoc": nan}
     except (IOError, RuntimeError): #Seems to just happen sometimes, currently just returning NAN until it is resolved.
-        if IOError_counter > 5:
+        if IOerror_counter > 5:
             sys.exit()
         else:
             return {
                 "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "Co2": nan,
                 "Tvoc": nan}
-            IOerror_counter += 1
+            increase_IOerror_counter(IOerror_counter)
 
 def write_csvfile(update_frq = 5): #define update frequency in seconds. This will create a new csvfile etry according to the set frequency.
     if not os.path.exists("csvfiles"):
