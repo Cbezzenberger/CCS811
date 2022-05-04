@@ -21,6 +21,7 @@ def print_to_epaper(imgfile, frequency=30):
 
                 f = f.convert('RGB')
                 data = f.load()
+                f.close() #Should already be handled by with statement, but getting "OSError: too many open files" without this for some reason
 
             for y in range(250): #This piece of code is directly taken from the geeekpi demo.py file
                 for x in range(128):
