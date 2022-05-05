@@ -46,9 +46,9 @@ def plot_update(frequency=5):
             plt.subplots_adjust(left=0.11, right=0.97, top=0.95, bottom=0.3)
             plt.savefig('fig.png', dpi = 130)
             plt.close('all') #This is not very efficient, but should work well enough for now and low update frequency. TODO:Optimise
-        
+
         except FileNotFoundError as e:
-            print(e, "--", time.strftime("%d - %H:%M:%S"))
+            print(e, "--", datetime.utcnow().strftime("%d %H:%M:%S"))
             pass
 
         sleep(frequency)
