@@ -1,6 +1,7 @@
-During covid I started building a small Co2 sensor to monitor the Co2 levels in my room and display them on a small epaper display.
+During covid I started building a small Co2 sensor to monitor the Co2 and TVOC levels in my room and display them on a small epaper display.
 
 ![Co2_sensor](https://user-images.githubusercontent.com/50334068/175136259-10f1e927-1f91-4aee-9638-58555aa540cb.jpg)
+*Red line is CO2 in ppm, black stroked line is TVOC in ppb*
 
 Out of the box, this code should work with 
 -Adafruit's CCS 811 Co2 sensor for Raspberry pi (For arduino, some adaptation might be necessary)
