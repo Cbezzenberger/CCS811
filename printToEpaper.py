@@ -28,12 +28,12 @@ def print_to_epaper(imgfile, frequency=30):
 
             imgfile = deepcopy(Image.open(imgfile))
             file_error_counter = 0
-            imgfile = f.rotate(angle=90, expand=True)
+            imgfile = imgfile.rotate(angle=90, expand=True)
 
             rBuf = [0] * 4000
             bBuf = [0] * 4000
             
-            f = f.convert('RGB')
+            imgfile = imgfile.convert('RGB')
 
             for y in range(250): #This piece of code is directly taken from the geeekpi demo.py file
                 for x in range(128):
