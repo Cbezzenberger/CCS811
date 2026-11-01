@@ -1,89 +1,103 @@
-from datetime import datetime, timedelta 
-import time
-from numpy import nan
-import adafruit_ccs811
-from multiprocessing import Process
+# SPDX-License-Identifier: GPL-3.0-only
+"""Read the CCS811 and keep a small, dated CSV history."""
+
 import csv
-import os
-import board
-import busio
-import sys
-import schedule
-#TODO: Switch from csv-based to tinydb in-memory storage.
+import logging
+import time
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
-i2c_bus = busio.I2C(board.SCL, board.SDA)
-ccs = adafruit_ccs811.CCS811(i2c_bus)
 
-fieldnames = ["Timestamp", "Co2", "Tvoc"]
+LOG = logging.getLogger(__name__)
+FIELDS = ("Timestamp", "Co2", "Tvoc")
+CONDITIONING_SECONDS = 20 * 60
 
-IOerror_counter = 0
 
-def update_ccsdata():
-    global IOerror_counter #Could not find a workaround for using global without rewriting large parts of the logic.
-    try:
-        if ccs.eco2 < 7500 and ccs.tvoc < 7500: #Sometimes, sensor is returning crazy-high numbers, this should catch it and return NAN in those cases.
-            #TODO: Add a check to see if the sensor is actually working.
-            return {
-                "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "Co2": ccs.eco2,
-                "Tvoc": ccs.tvoc}
-            IOerror_counter = 0 #reset IOError counter after successful sensor readout.
-        else:
-            return {
-                "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "Co2": nan,
-                "Tvoc": nan}
-    except (IOError, RuntimeError): #Seems to just happen sometimes, currently just returning NAN until it is resolved.
-        if IOerror_counter > 5:
-            sys.exit()
-        else:
-            return {
-                "Timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "Co2": nan,
-                "Tvoc": nan}
-            increase_IOerror_counter(IOerror_counter)
+class SensorReader:
+    def __init__(self):
+        self.sensor = None
+        self.next_attempt = 0.0
+        self.consecutive_errors = 0
+        self.started_at = None
 
-def write_csvfile(update_frq = 5): #Update frequency in seconds. This will create a new csvfile entry according to the set frequency.
-    if not os.path.exists("csvfiles"):
-        os.mkdir("csvfiles", mode=0o777)
+    def conditioning_remaining(self):
+        if self.started_at is None:
+            return CONDITIONING_SECONDS
+        return max(0, CONDITIONING_SECONDS - (time.monotonic() - self.started_at))
 
-    while True:
-        csvpath = f"csvfiles/{datetime.utcnow().strftime('%d')}_ccsdata.csv"
+    def read(self):
+        if time.monotonic() < self.next_attempt:
+            return None
+        try:
+            if self.sensor is None:
+                import adafruit_ccs811
+                import board
+                import busio
 
-        if not os.path.exists(csvpath):
-            with open(csvpath, "w")as csv_file:
-                csv.DictWriter(csv_file, fieldnames=fieldnames).writeheader()
+                self.sensor = adafruit_ccs811.CCS811(busio.I2C(board.SCL, board.SDA))
+                self.started_at = time.monotonic()
+                self.consecutive_errors = 0
+            if not self.sensor.data_ready:
+                return None
+            co2 = self.sensor.eco2
+            tvoc = self.sensor.tvoc
+            if not 400 <= co2 <= 8192 or not 0 <= tvoc <= 1187:
+                LOG.warning("Discarding out-of-range CCS811 reading: eCO2=%s, TVOC=%s", co2, tvoc)
+                return None
+            self.consecutive_errors = 0
+            return (datetime.now(timezone.utc), co2, tvoc)
+        except (OSError, RuntimeError, ValueError):
+            self.consecutive_errors += 1
+            if self.consecutive_errors >= 3:
+                LOG.exception("CCS811 failed three times; reconnecting in 30 seconds")
+                self.sensor = None
+                self.started_at = None
+                self.next_attempt = time.monotonic() + 30
+            else:
+                LOG.exception("CCS811 read failed; retrying in 10 seconds")
+                self.next_attempt = time.monotonic() + 10
+            return None
 
-        with open(csvpath, "a") as csv_file:
-            csvwriter = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
-            info = update_ccsdata()
+def csv_path(data_dir, day):
+    return Path(data_dir) / f"{day:%Y-%m-%d}_ccsdata.csv"
 
-            csvwriter.writerow(info)
 
-        time.sleep(update_frq)
+def append_reading(data_dir, reading):
+    timestamp, co2, tvoc = reading
+    data_dir = Path(data_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
+    path = csv_path(data_dir, timestamp)
+    with path.open("a", newline="") as stream:
+        writer = csv.writer(stream)
+        if stream.tell() == 0:
+            writer.writerow(FIELDS)
+        writer.writerow((timestamp.isoformat(), co2, tvoc))
 
-def delete_old_csv(): #Scheduled function delete the csv file from the next day's date at 23:55.
-    schedule.every().day.at("23:55").do(_delete_old_csv)
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
+    cutoff = datetime.now(timezone.utc).date() - timedelta(days=7)
+    for old_path in data_dir.glob("????-??-??_ccsdata.csv"):
+        try:
+            if datetime.strptime(old_path.name[:10], "%Y-%m-%d").date() < cutoff:
+                old_path.unlink()
+        except (ValueError, OSError):
+            LOG.warning("Could not clean up %s", old_path, exc_info=True)
 
-def _delete_old_csv():
-    tmrw = datetime.today() + timedelta(days=1)
-    try:
-        os.remove(os.path.abspath(f"csvfiles/{tmrw.strftime('%d')}_ccsdata.csv"))
-    except FileNotFoundError:
-        pass #File creation is handled in write_csvfile function.
 
-#TODO:Not sure if this is the most efficient implementation.
-def main():
-    p1 = Process(target=delete_old_csv)
-    p1.start()
-    p2 = Process(target=write_csvfile)
-    p2.start()
-    p1.join()
-    p2.join()
-
-if __name__ == '__main__':
-    main()
+def recent_readings(data_dir, limit=120):
+    today = datetime.now(timezone.utc)
+    readings = []
+    for day in (today - timedelta(days=1), today):
+        path = csv_path(data_dir, day)
+        try:
+            with path.open(newline="") as stream:
+                for row in csv.DictReader(stream):
+                    try:
+                        readings.append((datetime.fromisoformat(row["Timestamp"].replace("Z", "+00:00")),
+                                         int(row["Co2"]), int(row["Tvoc"])))
+                    except (KeyError, TypeError, ValueError):
+                        continue
+        except FileNotFoundError:
+            continue
+        except OSError:
+            LOG.warning("Could not read %s", path, exc_info=True)
+    return readings[-limit:]
