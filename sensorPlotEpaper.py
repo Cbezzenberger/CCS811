@@ -2,6 +2,7 @@
 """Draw a compact two-color chart without loading matplotlib on a Pi Zero."""
 
 from datetime import datetime, timedelta
+from statistics import median
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -11,6 +12,25 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 WIDTH, HEIGHT = 250, 128
 WINDOW_MINUTES = 30
+MAX_SMOOTH_GAP_SECONDS = 180
+
+
+def smooth_readings(readings):
+    """Suppress one-sample spikes without bridging gaps in the sensor history."""
+    if len(readings) < 3:
+        return readings
+    smoothed = []
+    for index, row in enumerate(readings):
+        window_start = max(0, min(index - 1, len(readings) - 3))
+        window = readings[window_start:window_start + 3]
+        gaps = ((later[0] - earlier[0]).total_seconds()
+                for earlier, later in zip(window, window[1:]))
+        if any(gap < 0 or gap > MAX_SMOOTH_GAP_SECONDS for gap in gaps):
+            smoothed.append(row)
+        else:
+            smoothed.append((row[0], median(sample[1] for sample in window),
+                             median(sample[2] for sample in window)))
+    return smoothed
 
 
 def draw_dashboard(history, latest=None, conditioning_seconds=0, now=None):
@@ -44,9 +64,10 @@ def draw_dashboard(history, latest=None, conditioning_seconds=0, now=None):
     visible = [row for row in history if start <= row[0] <= end]
     if not visible:
         return image
+    visible = smooth_readings(visible)
 
     co2_min = 400
-    co2_max = max(600, ((max(row[1] for row in visible) + 149) // 100) * 100)
+    co2_max = max(co2_min, max(row[1] for row in visible)) + 100
     tvoc_max = max(50, ((max(row[2] for row in visible) + 69) // 50) * 50)
     for y, label in ((top, co2_max), (middle, (co2_min + co2_max) // 2), (bottom - 8, co2_min)):
         draw.text((0, y), str(label), fill=RED, font=font)

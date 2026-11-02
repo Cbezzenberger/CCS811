@@ -46,6 +46,32 @@ class ImageTests(unittest.TestCase):
         self.assertTrue(all(image.getpixel((x, y)) == (255, 255, 255)
                             for x in range(250) for y in range(122, 128)))
 
+    def test_co2_axis_uses_visible_peak_plus_100_with_400_bottom(self):
+        now = datetime(2026, 11, 1, 12, 30, tzinfo=timezone.utc)
+        readings = [(now - timedelta(minutes=40), 3000, 100),
+                    (now - timedelta(minutes=30), 400, 0),
+                    (now - timedelta(minutes=15), 750, 0)]
+        image = draw_dashboard(readings, now=now)
+        self.assertEqual(image.getpixel((123, 40)), RED)
+        self.assertEqual(image.getpixel((123, 32)), (255, 255, 255))
+
+    def test_single_spike_does_not_change_chart_or_axis_scale(self):
+        now = datetime(2026, 11, 1, 12, 30, tzinfo=timezone.utc)
+        baseline = [(now - timedelta(seconds=40 - 10 * index), 500, 20)
+                    for index in range(5)]
+        spiky = baseline.copy()
+        spiky[2] = (spiky[2][0], 2500, 900)
+        self.assertEqual(draw_dashboard(spiky, now=now).tobytes(),
+                         draw_dashboard(baseline, now=now).tobytes())
+
+    def test_sustained_rise_remains_visible(self):
+        now = datetime(2026, 11, 1, 12, 30, tzinfo=timezone.utc)
+        baseline = [(now - timedelta(seconds=40 - 10 * index), 500, 20)
+                    for index in range(5)]
+        risen = baseline[:2] + [(stamp, 800, 150) for stamp, _, _ in baseline[2:]]
+        self.assertNotEqual(draw_dashboard(risen, now=now).tobytes(),
+                            draw_dashboard(baseline, now=now).tobytes())
+
 
 class DataTests(unittest.TestCase):
     def test_failed_display_retries_before_night_interval(self):
