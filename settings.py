@@ -11,7 +11,8 @@ from pathlib import Path
 
 
 LOG = logging.getLogger(__name__)
-FIELDS = ("sample_seconds", "day_refresh_minutes", "night_refresh_minutes", "night_start", "night_end")
+FIELDS = ("sample_seconds", "day_refresh_minutes", "night_refresh_minutes",
+          "night_start", "night_end", "eco2_warning_ppm")
 
 
 @dataclass(frozen=True)
@@ -21,15 +22,17 @@ class Settings:
     night_refresh_minutes: int = 10
     night_start: str = "22:00"
     night_end: str = "08:00"
+    eco2_warning_ppm: int = 1000
 
     @classmethod
     def from_values(cls, values):
         if set(values) != set(FIELDS):
-            raise ValueError("All timing fields are required")
+            raise ValueError("All settings fields are required")
         numbers = {}
         for name, minimum, maximum in (("sample_seconds", 5, 60),
                                        ("day_refresh_minutes", 1, 60),
-                                       ("night_refresh_minutes", 1, 120)):
+                                       ("night_refresh_minutes", 1, 120),
+                                       ("eco2_warning_ppm", 401, 8192)):
             value = values[name]
             if type(value) is str and value.isdecimal():
                 value = int(value)
@@ -61,7 +64,11 @@ def load_settings(path, fallback=None):
     path = Path(path)
     try:
         with path.open(encoding="utf-8") as stream:
-            return Settings.from_values(json.load(stream))
+            values = json.load(stream)
+            # Preserve timing choices saved before the warning setting existed.
+            if isinstance(values, dict) and set(values) == set(FIELDS) - {"eco2_warning_ppm"}:
+                values["eco2_warning_ppm"] = Settings().eco2_warning_ppm
+            return Settings.from_values(values)
     except FileNotFoundError:
         return fallback or Settings()
     except (OSError, ValueError, TypeError, json.JSONDecodeError):

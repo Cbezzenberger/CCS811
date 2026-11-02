@@ -18,7 +18,8 @@ class SettingsTests(unittest.TestCase):
 
     def test_validated_settings_round_trip(self):
         values = {"sample_seconds": "15", "day_refresh_minutes": "2",
-                  "night_refresh_minutes": "12", "night_start": "23:30", "night_end": "06:30"}
+                  "night_refresh_minutes": "12", "night_start": "23:30", "night_end": "06:30",
+                  "eco2_warning_ppm": "1200"}
         settings = Settings.from_values(values)
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.json"
@@ -28,14 +29,29 @@ class SettingsTests(unittest.TestCase):
 
     def test_invalid_values_are_rejected(self):
         values = {"sample_seconds": "1", "day_refresh_minutes": "2",
-                  "night_refresh_minutes": "12", "night_start": "22:00", "night_end": "08:00"}
+                  "night_refresh_minutes": "12", "night_start": "22:00", "night_end": "08:00",
+                  "eco2_warning_ppm": "1000"}
         with self.assertRaises(ValueError):
             Settings.from_values(values)
         values["sample_seconds"] = "10"
+        values["eco2_warning_ppm"] = "400"
+        with self.assertRaises(ValueError):
+            Settings.from_values(values)
+        values["eco2_warning_ppm"] = "1000"
         values["night_end"] = "22:00"
         with self.assertRaises(ValueError):
             Settings.from_values(values)
 
+    def test_older_settings_file_gains_default_warning_without_losing_timing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            path.write_text(json.dumps({"sample_seconds": 15, "day_refresh_minutes": 2,
+                                        "night_refresh_minutes": 12, "night_start": "23:30",
+                                        "night_end": "06:30"}))
+            settings = load_settings(path)
+            self.assertEqual(settings.sample_seconds, 15)
+            self.assertEqual(settings.night_start, "23:30")
+            self.assertEqual(settings.eco2_warning_ppm, 1000)
     def test_invalid_file_keeps_previous_settings(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.json"

@@ -15,6 +15,40 @@ WINDOW_MINUTES = 30
 MAX_SMOOTH_GAP_SECONDS = 180
 
 
+def _bitmap_label(image, text, y, scale, fill):
+    """Center crisp text that survives the display's three-color conversion."""
+    font = ImageFont.load_default()
+    # Font.getbbox() can be narrower than ImageDraw's actual glyphs, cutting
+    # off the final letter. Render with padding and crop to the painted pixels.
+    canvas = Image.new("1", (max(WIDTH, len(text) * 16 + 16), 32))
+    ImageDraw.Draw(canvas).text((8, 8), text, fill=1, font=font)
+    bounds = canvas.getbbox()
+    if bounds is None:
+        return
+    mask = canvas.crop(bounds)
+    mask = mask.resize((mask.width * scale, mask.height * scale), Image.Resampling.NEAREST)
+    if mask.width > WIDTH:
+        raise ValueError(f"Warning label is too wide: {text}")
+    image.paste(fill, ((WIDTH - mask.width) // 2, y), mask)
+
+
+def draw_warning(co2):
+    """A white caution placard for a sustained high eCO2 estimate."""
+    image = Image.new("RGB", (WIDTH, HEIGHT), WHITE)
+    draw = ImageDraw.Draw(image)
+    for x in (17, WIDTH - 29):
+        for y in (16, HEIGHT - 29):
+            draw.rectangle((x, y, x + 12, y + 12), fill=RED)
+            draw.ellipse((x + 3, y + 3, x + 9, y + 9), fill=BLACK)
+            draw.ellipse((x + 5, y + 5, x + 7, y + 7), fill=WHITE)
+    _bitmap_label(image, "CAUTION", 29, 3, RED)
+    _bitmap_label(image, "AIR QUALITY ESTIMATE", 58, 1, BLACK)
+    _bitmap_label(image, f"{co2} ppm eCO2", 69, 1, BLACK)
+    _bitmap_label(image, "CHECK VENTILATION", 80, 1, BLACK)
+    _bitmap_label(image, "eCO2 HIGH", 92, 3, RED)
+    return image
+
+
 def smooth_readings(readings):
     """Suppress one-sample spikes without bridging gaps in the sensor history."""
     if len(readings) < 3:

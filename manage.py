@@ -64,6 +64,7 @@ h1{{font-size:1.5rem;margin-top:0}}p{{line-height:1.5}}fieldset{{border:1px soli
 legend{{font-weight:700}}label{{display:block;margin:.8rem 0 .3rem}}input{{font:inherit;padding:.5rem;width:100%;box-sizing:border-box}}
 button{{font:inherit;background:#193b3b;color:white;border:0;border-radius:5px;padding:.7rem 1.2rem;cursor:pointer}}
 .muted{{color:#475757}}.error{{color:#9b1b1b;font-weight:700}}
+.warning{{border-left:4px solid #ed1c24;padding-left:.7rem}}
 </style></head><body><main>
 <h1>eCO2 imager settings</h1>
 <p class="muted">{html.escape(sample)}</p>
@@ -84,6 +85,11 @@ Local time: {local_now:%H:%M} {html.escape(local_now.tzname() or '')}.</p>
 <p class="muted">Uses the Pi's local time. A window can cross midnight.</p>
 <label for="night_start">Starts at</label><input id="night_start" name="night_start" type="time" required value="{values['night_start']}">
 <label for="night_end">Ends at</label><input id="night_end" name="night_end" type="time" required value="{values['night_end']}">
+</fieldset>
+<fieldset><legend>Air warning</legend>
+<p class="muted warning">Above the threshold, the display alternates every two minutes between a full-screen caution panel and the graph. eCO2 is a gas-based estimate, not a direct CO2 measurement. Warnings are muted while the sensor warms up.</p>
+<label for="eco2_warning_ppm">eCO2 warning threshold (ppm)</label>
+<input id="eco2_warning_ppm" name="eco2_warning_ppm" type="number" min="401" max="8192" required value="{values['eco2_warning_ppm']}">
 </fieldset><button type="submit">Save settings</button></form>
 </main></body></html>"""
         self._respond(status, page)
@@ -113,9 +119,9 @@ Local time: {local_now:%H:%M} {html.escape(local_now.tzname() or '')}.</p>
             return
         try:
             form = parse_qs(self.rfile.read(int(length)).decode("utf-8"),
-                            keep_blank_values=True, strict_parsing=True, max_num_fields=6)
+                            keep_blank_values=True, strict_parsing=True, max_num_fields=len(FIELDS) + 1)
             if set(form) != set(FIELDS) | {"csrf_token"} or any(len(values) != 1 for values in form.values()):
-                raise ValueError("All timing fields are required")
+                raise ValueError("All settings fields are required")
             if not secrets.compare_digest(form["csrf_token"][0], self.server.csrf_token):
                 LOG.warning("Rejected settings POST: invalid form token")
                 self._page("This form expired after a restart. Reload the page and try again.", status=403)

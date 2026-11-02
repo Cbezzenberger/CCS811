@@ -73,7 +73,12 @@ ssh -N -L 127.0.0.1:8765:127.0.0.1:8765 your-user@your-pi.local
 Replace `your-user@your-pi.local` with your Pi login and address. Open
 <http://127.0.0.1:8765> in your browser. The page is reachable only
 through SSH, so protect your Pi login with a strong password or SSH key. You
-can change sensor sampling and day/night display refresh times there.
+can change sensor sampling, day/night display refresh times, and the eCO2
+warning threshold there. The default warning threshold is 1,000 ppm. The
+full-screen caution panel appears after two nearby high samples and alternates
+with the graph every two minutes until readings fall. Entering and leaving the
+warning triggers an immediate display refresh even during the night window.
+Warnings are muted while the sensor warms up.
 
 ## License
 

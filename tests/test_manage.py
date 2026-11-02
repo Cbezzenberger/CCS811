@@ -36,7 +36,8 @@ class ManagementSecurityTests(unittest.TestCase):
     def form(self, token):
         return urlencode({"csrf_token": token, "sample_seconds": "15",
                           "day_refresh_minutes": "2", "night_refresh_minutes": "12",
-                          "night_start": "23:00", "night_end": "07:00"})
+                          "night_start": "23:00", "night_end": "07:00",
+                          "eco2_warning_ppm": "1200"})
 
     def test_loopback_host_and_csrf_are_required(self):
         self.assertEqual(self.server.server_address[0], "127.0.0.1")
@@ -44,6 +45,7 @@ class ManagementSecurityTests(unittest.TestCase):
         status, page = self.request("GET", "/")
         self.assertEqual(status, 200)
         self.assertIn(self.server.csrf_token, page)
+        self.assertIn('name="eco2_warning_ppm"', page)
         form = self.form(self.server.csrf_token)
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         self.assertEqual(self.request("POST", "/settings", self.form("bad"), headers)[0], 403)
@@ -66,9 +68,13 @@ class ManagementSecurityTests(unittest.TestCase):
         self.assertEqual(status, 303)
         path = Path(self.directory.name) / "settings.json"
         self.assertEqual(load_settings(path).night_refresh_minutes, 12)
+        self.assertEqual(load_settings(path).eco2_warning_ppm, 1200)
         invalid = self.form(self.server.csrf_token).replace("sample_seconds=15", "sample_seconds=1")
         self.assertEqual(self.request("POST", "/settings", invalid, headers)[0], 400)
         self.assertEqual(load_settings(path).sample_seconds, 15)
+        invalid_warning = self.form(self.server.csrf_token).replace("eco2_warning_ppm=1200", "eco2_warning_ppm=400")
+        self.assertEqual(self.request("POST", "/settings", invalid_warning, headers)[0], 400)
+        self.assertEqual(load_settings(path).eco2_warning_ppm, 1200)
 
 
 if __name__ == "__main__":
